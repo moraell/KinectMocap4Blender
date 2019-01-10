@@ -15,7 +15,8 @@ A few monthes ago, I browsed the web in order to find a way to setup my own home
 *coming soon*
 
 ## Install from release archive
-Download the release archive and unpack the files (kinecp_mocap.py and kinectMocap4Blender.pyd) in Blender addons directory.
+- Install Kinect for Windows SDK 2.0 if you haven't already
+- Download the release archive and unpack the files (kinecp_mocap.py and kinectMocap4Blender.pyd) in Blender addons directory.
 Consult Blender documentation for more information on plugin installation. [https://docs.blender.org/]
 
 ## Dependencies
