@@ -218,6 +218,7 @@ class KinectMocapPanel(bpy.types.Panel):
         
         # choose armature
         layout.prop(context.scene.kmc_props, "arma_list")
+        layout.separator()
         
         if len(context.scene.kmc_props.targetBones) == 0 :
             # initialization operator
@@ -225,16 +226,19 @@ class KinectMocapPanel(bpy.types.Panel):
         
         else:
             # bones retargeting
+            box = layout.box()
+            box.label("        Bone Targeting")
             for target in context.scene.kmc_props.targetBones :
-                layout.prop(target, "value", text=target.name)
-            
-            # activate record mode
-            layout.prop(context.scene.kmc_props, "record")
+                box.prop(target, "value", text=target.name)
             
             # activate
+            layout.separator()
             layout.operator("kmc.start")
             layout.label("(right clic or 'Esc' to stop)")
 
+            # activate record mode
+            layout.prop(context.scene.kmc_props, "record")
+            
     def __del__(self):
         pass
 
