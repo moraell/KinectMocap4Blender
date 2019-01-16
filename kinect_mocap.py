@@ -93,6 +93,25 @@ jointType = {
     "ThumbRight":24
 }
 
+ordererBoneList = ["Head",
+    "Neck",
+    "Spine1",
+    "Spine0",
+    "LeftShoulder",
+    "LeftUpperArm",
+    "LeftLowerArm",
+    "LeftHand",
+    "RightShoulder",
+    "RightUpperArm",
+    "RightLowerArm",
+    "RightHand",
+    "LeftUpperLeg",
+    "LeftLowerLeg",
+    "LeftFoot",
+    "RightUpperLeg",
+    "RightLowerLeg",
+    "RightFoot"]
+
 defaultTargetBones = {
     "Head":"Head",
     "Neck":"Neck",
@@ -228,8 +247,11 @@ class KinectMocapPanel(bpy.types.Panel):
             # bones retargeting
             box = layout.box()
             box.label("        Bone Targeting")
-            for target in context.scene.kmc_props.targetBones :
-                box.prop(target, "value", text=target.name)
+            for strBone in ordererBoneList :
+                for target in context.scene.kmc_props.targetBones :
+                    if target.name == strBone :
+                        box.prop(target, "value", text=target.name)
+                        break
             
             # activate
             layout.separator()
