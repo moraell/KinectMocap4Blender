@@ -30,4 +30,4 @@ There are two parts in the project :
 The library was designed to be built using Visual Studio 2017 (only the Release configuration has been properly configured at the moment).
 
 ## Current progress
-This is Beta version 0.2. It works fine but the interface is unclear and you have to copy/paste a lot during the configuration.
+The project is currently in version 1.0. 
