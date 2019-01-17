@@ -23,9 +23,9 @@ bl_info = {
     "name": "Kinect Motion Capture plugin",
     "description": "Motion capture using MS Kinect v2",
     "author": "Morgane Dufresne",
-    "version": (0, 2),
+    "version": (1, 0),
     "blender": (2, 79, 0),
-    "warning": "You need a MS Kinect v2 sensor (XBox One) with latest drivers installed (2.2)",
+    "warning": "You need a MS Kinect v2 sensor (XBox One)",
     "support": "COMMUNITY",
     "category": "Animation"
 }
