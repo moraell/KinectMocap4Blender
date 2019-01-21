@@ -20,6 +20,7 @@ A few monthes ago, I browsed the web in order to find a way to setup my own home
 Consult Blender documentation for more information on plugin installation. [https://docs.blender.org/]
 
 ## Dependencies
+- Python 3.5.3 (for Blender 2.79 buils), 3.7 for Blender 2.80
 - Boost Python v1.67.0 [https://www.boost.org/]
 - Kinect for Windows SDK 2.0 [https://www.microsoft.com/en-us/download/details.aspx?id=44561]
 
