@@ -54,16 +54,16 @@ def validateTarget(self, context):
             self.value = ""
     return None
 
-class KmcTarget(bpy.types.PropertyGroup):
-    name = bpy.props.StringProperty(name="KBone")
-    value = bpy.props.StringProperty(name="TBone", update=validateTarget)
+class KMC_PG_KmcTarget(bpy.types.PropertyGroup):
+    name : bpy.props.StringProperty(name="KBone")
+    value : bpy.props.StringProperty(name="TBone", update=validateTarget)
 
-class KmcProperties(bpy.types.PropertyGroup):
-    fps = bpy.props.IntProperty(name="fps", description="Tracking frames per second", default=24, min = 1, max = 60)
-    arma_list = bpy.props.EnumProperty(items = armature_callback, name="Armature", default=None)
-    targetBones = bpy.props.CollectionProperty(type = KmcTarget)
-    currentFrame = bpy.props.IntProperty(name="currentFrame", description="current recording frame", default=0)
-    record = bpy.props.BoolProperty(name="Record captured motion", description="activate recording while tracking")
+class KMC_PG_KmcProperties(bpy.types.PropertyGroup):
+    fps : bpy.props.IntProperty(name="fps", description="Tracking frames per second", default=24, min = 1, max = 60)
+    arma_list : bpy.props.EnumProperty(items = armature_callback, name="Armature", default=None)
+    targetBones : bpy.props.CollectionProperty(type = KMC_PG_KmcTarget)
+    currentFrame : bpy.props.IntProperty(name="currentFrame", description="current recording frame", default=0)
+    record : bpy.props.BoolProperty(name="Record captured motion", description="activate recording while tracking")
 
 jointType = {
     "SpineBase":0,
@@ -195,7 +195,7 @@ def updatePose(context, bone):
                 boneV = Vector((head[X] - tail[X], tail[Y] - head[Y], tail[Z] - head[Z]))
                 
                 # convert rotation in local coordinates
-                boneV = boneV * bone.matrix
+                boneV = boneV @ bone.matrix
                 
                 # compensate rest pose direction
                 if target.name in restDirection :
@@ -203,7 +203,7 @@ def updatePose(context, bone):
                 
                 # calculate desired rotation
                 rot = Vector((0,1,0)).rotation_difference(boneV)
-                bone.rotation_quaternion = bone.rotation_quaternion * rot
+                bone.rotation_quaternion = bone.rotation_quaternion @ rot
                 if context.scene.kmc_props.currentFrame == 0:
                     # first captured frame, initiate recording by setting the current frame to 1
                     context.scene.kmc_props.currentFrame += 1
@@ -219,12 +219,12 @@ def updatePose(context, bone):
 ###############################################
 
 # main panel
-class KinectMocapPanel(bpy.types.Panel):
+class KMC_PT_KinectMocapPanel(bpy.types.Panel):
     """ Creates a panel in Pose mode """
     bl_label = "Kinect Motion Capture Panel"
-    bl_idname = "kmc_panel"
+    bl_idname = "KMC_PT_KinectMocapPanel"
     bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
+    bl_region_type = 'UI'
     bl_category = "Kinect MoCap"
     bl_context = "posemode"
     
@@ -246,17 +246,17 @@ class KinectMocapPanel(bpy.types.Panel):
         else:
             # bones retargeting
             box = layout.box()
-            box.label("        Bone Targeting")
+            box.label(text="        Bone Targeting")
             for strBone in ordererBoneList :
                 for target in context.scene.kmc_props.targetBones :
                     if target.name == strBone :
-                        box.prop(target, "value", text=target.name)
+                        layout.prop(target, "value", text=target.name)
                         break
             
             # activate
             layout.separator()
             layout.operator("kmc.start")
-            layout.label("(right clic or 'Esc' to stop)")
+            layout.label(text="(right clic or 'Esc' to stop)")
 
             # activate record mode
             layout.prop(context.scene.kmc_props, "record")
@@ -270,7 +270,7 @@ class KinectMocapPanel(bpy.types.Panel):
 ###############################################
 
 # initialize system
-class KmcInitOperator(bpy.types.Operator):
+class KMC_OT_KmcInitOperator(bpy.types.Operator):
     bl_idname = "kmc.init"
     bl_label = "Initialize tracking system"
     
@@ -282,7 +282,7 @@ class KmcInitOperator(bpy.types.Operator):
         return {'FINISHED'}
 
 # start tracking
-class KmcStartTrackingOperator(bpy.types.Operator):
+class KMC_OT_KmcStartTrackingOperator(bpy.types.Operator):
     bl_idname = "kmc.start"
     bl_label = "Start tracking"
     
@@ -317,7 +317,7 @@ class KmcStartTrackingOperator(bpy.types.Operator):
         # start tracking
         wm = context.window_manager
         framerate = 1.0 / context.scene.kmc_props.fps
-        self._timer = wm.event_timer_add(framerate, context.window)
+        self._timer = wm.event_timer_add(framerate, window=context.window)
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
 
@@ -325,12 +325,23 @@ class KmcStartTrackingOperator(bpy.types.Operator):
 #               Registration
 ###############################################
 
+classes = (
+    KMC_PG_KmcTarget,
+    KMC_PG_KmcProperties,
+    KMC_PT_KinectMocapPanel,
+    KMC_OT_KmcInitOperator,
+    KMC_OT_KmcStartTrackingOperator
+)
+
 def register():
-    bpy.utils.register_module(__name__)
+    for c in classes :
+        bpy.utils.register_class(c)
     bpy.types.Scene.k_sensor = kinectMocap4Blender.Sensor()
-    bpy.types.Scene.kmc_props = bpy.props.PointerProperty(type=KmcProperties)
+    bpy.types.Scene.kmc_props = bpy.props.PointerProperty(type=KMC_PG_KmcProperties)
 
 def unregister():
+    for c in reversed(classes) :
+        bpy.utils.register_class(c)
     bpy.utils.unregister_module(__name__)
     del bpy.types.Scene.k_sensor
     del bpy.types.Scene.kmc_props

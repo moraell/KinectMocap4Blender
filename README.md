@@ -21,7 +21,7 @@ Consult Blender documentation for more information on plugin installation. [http
 
 ## Dependencies
 - Python 3.5.3 (for Blender 2.79 buils), 3.7 for Blender 2.80
-- Boost Python v1.67.0 [https://www.boost.org/]
+- Boost Python v1.69.0 [https://www.boost.org/]
 - Kinect for Windows SDK 2.0 [https://www.microsoft.com/en-us/download/details.aspx?id=44561]
 
 ## Build
