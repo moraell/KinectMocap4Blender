@@ -31,6 +31,7 @@ bl_info = {
 }
 
 import bpy
+import functools
 import kinectMocap4Blender
 import mathutils
 from mathutils import Euler, Vector, Quaternion, Matrix
@@ -64,6 +65,8 @@ class KMC_PG_KmcProperties(bpy.types.PropertyGroup):
     targetBones : bpy.props.CollectionProperty(type = KMC_PG_KmcTarget)
     currentFrame : bpy.props.IntProperty(name="currentFrame", description="current recording frame", default=0)
     record : bpy.props.BoolProperty(name="Record captured motion", description="activate recording while tracking")
+    isTracking : bpy.props.BoolProperty(name="Tracking status", description="tracking status")
+    stopTracking : bpy.props.BoolProperty(name="Stop trigger", description="tells to stop the tracking")
 
 jointType = {
     "SpineBase":0,
@@ -164,6 +167,7 @@ def initialize(context):
     bpy.ops.pose.transforms_clear()
     bpy.ops.pose.select_all(action=('DESELECT'))
     context.scene.kmc_props.currentFrame = 0
+    context.scene.kmc_props.stopTracking = False
 
     for target in context.scene.kmc_props.targetBones:
         if target.value is not None and target.value != "" :
@@ -246,20 +250,32 @@ class KMC_PT_KinectMocapPanel(bpy.types.Panel):
         else:
             # bones retargeting
             box = layout.box()
-            box.label(text="        Bone Targeting")
+            box.alignment = 'LEFT'
+            box.label(text="             Bone Targeting")
             for strBone in ordererBoneList :
                 for target in context.scene.kmc_props.targetBones :
                     if target.name == strBone :
-                        layout.prop(target, "value", text=target.name)
+                        box.prop(target, "value", text=target.name)
                         break
             
             # activate
             layout.separator()
             layout.operator("kmc.start")
-            layout.label(text="(right clic or 'Esc' to stop)")
+            #layout.label(text="(right clic or 'Esc' to stop)")
+
+            # stop
+            layout.separator()
+            layout.operator("kmc.stop")
 
             # activate record mode
             layout.prop(context.scene.kmc_props, "record")
+
+            box = layout.box()
+            box.alignment = 'CENTER'
+            if context.scene.kmc_props.isTracking:
+                box.label(text="Status : tracking")
+            else:
+                box.label(text="Status : stopped")
             
     def __del__(self):
         pass
@@ -281,45 +297,45 @@ class KMC_OT_KmcInitOperator(bpy.types.Operator):
                 newTarget.value = ""
         return {'FINISHED'}
 
+# timer function
+def captureFrame(context):
+    framerate = 1.0 / context.scene.kmc_props.fps
+    
+    if(context.scene.k_sensor.update() == 1):
+        # update pose
+        updatePose(context, bpy.data.objects[context.scene.kmc_props.arma_list].pose.bones[0])
+
+    if context.scene.kmc_props.currentFrame > 0 :
+        context.scene.kmc_props.currentFrame += 1
+        
+    if context.scene.kmc_props.stopTracking:
+        context.scene.kmc_props.stopTracking = False
+        return None
+    else:
+        return framerate
+
 # start tracking
 class KMC_OT_KmcStartTrackingOperator(bpy.types.Operator):
     bl_idname = "kmc.start"
-    bl_label = "Start tracking"
+    bl_label = "Start / Stop"
     
-    def __init__(self):
-        pass
- 
-    def __del__(self):
-        pass
+    def execute(self, context):
 
-    def modal(self, context, event):
-        wm = context.window_manager
-        context.scene.k_sensor.init()
-        if event.type == 'TIMER':
-            if(context.scene.k_sensor.update() == 1):
-                # update pose
-                updatePose(context, bpy.data.objects[context.scene.kmc_props.arma_list].pose.bones[0])
-            if context.scene.kmc_props.currentFrame > 0 :
-                context.scene.kmc_props.currentFrame += 1
-        
-        elif event.type in {'RIGHTMOUSE', 'ESC'}:
-            # stop tracking
-            wm.event_timer_remove(self._timer)
+        if context.scene.kmc_props.isTracking:
+            context.scene.kmc_props.stopTracking = True
+            context.scene.kmc_props.isTracking = False
             context.scene.k_sensor.close()
-            return {'CANCELLED'}
- 
-        return {'RUNNING_MODAL'}
- 
-    def invoke(self, context, event):
-        # init system
-        initialize(context)
-        
-        # start tracking
-        wm = context.window_manager
-        framerate = 1.0 / context.scene.kmc_props.fps
-        self._timer = wm.event_timer_add(framerate, window=context.window)
-        context.window_manager.modal_handler_add(self)
-        return {'RUNNING_MODAL'}
+
+        else:
+            # init system
+            initialize(context)
+
+            context.scene.k_sensor.init()
+            bpy.app.timers.register(functools.partial(captureFrame, context))
+            context.scene.kmc_props.isTracking = True
+
+        return {'FINISHED'}
+
 
 ###############################################
 #               Registration
