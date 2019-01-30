@@ -262,11 +262,6 @@ class KMC_PT_KinectMocapPanel(bpy.types.Panel):
             # activate
             layout.separator()
             layout.operator("kmc.start")
-            #layout.label(text="(right clic or 'Esc' to stop)")
-
-            # stop
-            layout.separator()
-            layout.operator("kmc.stop")
 
             # activate record mode
             layout.prop(context.scene.kmc_props, "record")
