@@ -21,7 +21,6 @@ SOFTWARE.
 */
 #pragma once
 
-//#include <Python.h>
 #include <Kinect.h>
 
 #define BOOST_PYTHON_STATIC_LIB
