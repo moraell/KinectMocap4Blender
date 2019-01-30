@@ -208,10 +208,11 @@ def updatePose(context, bone):
                 # calculate desired rotation
                 rot = Vector((0,1,0)).rotation_difference(boneV)
                 bone.rotation_quaternion = bone.rotation_quaternion @ rot
-                if context.scene.kmc_props.currentFrame == 0:
-                    # first captured frame, initiate recording by setting the current frame to 1
-                    context.scene.kmc_props.currentFrame += 1
                 if context.scene.kmc_props.record :
+                    if context.scene.kmc_props.currentFrame == 0:
+                        # first captured frame, initiate recording by setting the current frame to 1
+                        context.scene.kmc_props.currentFrame += 1
+
                     bone.keyframe_insert(data_path="rotation_quaternion", frame=context.scene.kmc_props.currentFrame)
                 
     # update child bones
@@ -304,6 +305,7 @@ def captureFrame(context):
     if(context.scene.k_sensor.update() == 1):
         # update pose
         updatePose(context, bpy.data.objects[context.scene.kmc_props.arma_list].pose.bones[0])
+        #context.scene.update()
 
     if context.scene.kmc_props.currentFrame > 0 :
         context.scene.kmc_props.currentFrame += 1
