@@ -176,7 +176,7 @@ def initialize(context):
 
             # Store rest pose angles for column, head and feet bones
             if bonesDefinition[target.name][2] is not None :
-                baseDir =  bonesDefinition[target.name][2] * bone.matrix
+                baseDir =  bonesDefinition[target.name][2] @ bone.matrix
                 restDirection[target.name] = baseDir.rotation_difference(Vector((0,1,0)))
 
 
