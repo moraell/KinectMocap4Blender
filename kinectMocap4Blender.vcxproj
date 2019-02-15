@@ -159,6 +159,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
+    <None Include="CHANGELOG.md" />
     <None Include="scripts\2.79\kinect_mocap.py" />
     <None Include="LICENSE" />
     <None Include="README.md" />
