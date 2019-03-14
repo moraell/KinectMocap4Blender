@@ -6,7 +6,7 @@ This Blender add-on allows you to capture live movement for a human-like model i
 
 The target model must be in a standing rest pose.
 
-It has been developped for Blender 2.79 and 2.80 on Windows 10.
+It has been developped for Blender 2.79 Windows 10. There is also a version for Blender 2.80 but I advise strongly against using it (it has to stay in an experimental state until Blender 2.80 is officially out of Beta).
 
 ### A few words about the project genesis
 A few monthes ago, I browsed the web in order to find a way to setup my own homemade capture studio with a Kinect sensor, for a videogame I'm working on. I am not a 3D artist and a real noob with Blender, so I wanted something to help me with the animation process. I found a few solutions but they were either very expensive (and not working very well anyway, at least the demos I tried) or not fitting my needs (not working on Windows 10 or requiring a specific armature that just wouldn't do with my target model). So I decided to learn Python, dig into Blender documentation (and I think I broke a few shovels in the process ;)), and here is the result.
