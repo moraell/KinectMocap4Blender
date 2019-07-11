@@ -31,10 +31,11 @@ inline void SafeRelease(Interface *& pInterfaceToRelease)
 	}
 }
 
-// start kinect captor
-int initSensor() {
+// start kinect sensor
+int initSensor(double inDt) {
 	HRESULT hr;
 	int res = 0;
+	dt = inDt;
 
 	hr = GetDefaultKinectSensor(&m_pKinectSensor);
 	if (FAILED(hr)) {
@@ -63,10 +64,16 @@ int initSensor() {
 		res = 0;
 	}
 
+	if (res) {
+		// Initialize kalman filters
+		for (int i = 0; i < 25; i++) {
+			kalman[i] = NULL;
+		}
+	}
 	return res;
 }
 
-// stop kinect captor
+// stop kinect sensor
 int closeSensor() {
 	// done with body frame reader
 	SafeRelease(m_pBodyFrameReader);
@@ -78,7 +85,32 @@ int closeSensor() {
 
 	SafeRelease(m_pKinectSensor);
 
+	// delete kalman data
+	for (int i = 0; i < 25; i++) {
+		if (kalman[i]) {
+			delete kalman[i];
+			kalman[i] = NULL;
+		}
+	}
 	return 1;
+}
+
+// apply Kalman filter
+int applyKalman(int jointNumber) {
+	double result[3] = { 0,0,0 };
+
+	if (kalman[jointNumber]) {
+		kalman[jointNumber]->getFilteredState(joints[jointNumber].Position.X, joints[jointNumber].Position.Y, joints[jointNumber].Position.Z, result);
+		joints[jointNumber].Position.X = result[0];
+		joints[jointNumber].Position.Y = result[1];
+		joints[jointNumber].Position.Z = result[2];
+	}
+	else {
+		// init filter
+		kalman[jointNumber] = new SimpleKalman(dt);
+		kalman[jointNumber]->init(joints[jointNumber].Position.X, joints[jointNumber].Position.Y, joints[jointNumber].Position.Z);
+	}
+	return 0;
 }
 
 // get frame (updates joints)
@@ -116,6 +148,10 @@ int updateFrame() {
 						hr = pBody->GetJoints(_countof(joints), joints);
 						
 						if (SUCCEEDED(hr)) {
+							// apply kalman filter to each joint
+							for (int j = 0; j < 25; j++) {
+								applyKalman(j);
+							}
 							res = 1;
 						}
 					}
@@ -130,9 +166,10 @@ int updateFrame() {
 	return res;
 }
 
+
 struct Sensor {
 	tuple getJoint(int jointNumber) { return make_tuple(joints[jointNumber].Position.X, joints[jointNumber].Position.Y, joints[jointNumber].Position.Z, static_cast<int>(joints[jointNumber].TrackingState)); }
-	int init() { return initSensor(); }
+	int init(double dt) { return initSensor(dt); }
 	int close() { return closeSensor(); }
 	int update() { return updateFrame(); }
 };

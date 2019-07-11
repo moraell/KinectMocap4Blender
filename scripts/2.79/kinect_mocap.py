@@ -23,7 +23,7 @@ bl_info = {
     "name": "Kinect Motion Capture plugin",
     "description": "Motion capture using MS Kinect v2",
     "author": "Morgane Dufresne",
-    "version": (1, 0),
+    "version": (1, 2),
     "blender": (2, 79, 0),
     "warning": "You need a MS Kinect v2 sensor (XBox One)",
     "support": "COMMUNITY",
@@ -41,7 +41,10 @@ from time import sleep
 ###############################################
 
 def armature_callback(self, context):
-    arms = [(str(arm.id_data.name), arm.name, arm.name) for arm in bpy.data.armatures]
+    arms = []
+    for obj in bpy.data.objects :
+        if 'ARMATURE' == obj.type :
+            arms.append((str(obj.id_data.name), obj.name, obj.name))
     return arms
 
 def validateTarget(self, context):
@@ -286,12 +289,6 @@ class KmcStartTrackingOperator(bpy.types.Operator):
     bl_idname = "kmc.start"
     bl_label = "Start tracking"
     
-    def __init__(self):
-        pass
- 
-    def __del__(self):
-        pass
-
     def modal(self, context, event):
         wm = context.window_manager
         context.scene.k_sensor.init()

@@ -330,7 +330,7 @@ class KMC_OT_KmcStartTrackingOperator(bpy.types.Operator):
             # init system
             initialize(context)
 
-            context.scene.k_sensor.init()
+            context.scene.k_sensor.init(1.0 / context.scene.kmc_props.fps)
             bpy.app.timers.register(functools.partial(captureFrame, context))
             context.scene.kmc_props.isTracking = True
 

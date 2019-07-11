@@ -19,26 +19,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+/* A Kalman filter implementation tailored to Kinect V2 joint tracking */
+#include <Eigen/Dense>
+
+using Eigen::MatrixXd;
+using Eigen::Matrix;
+
 #pragma once
 
-#include <Kinect.h>
-#include "SimpleKalman.h"
+class SimpleKalman
+{
+public:
+	SimpleKalman(const double dt);
+	SimpleKalman(const double dt, const double sNoise, const double u, const double uNoise);
+	~SimpleKalman();
 
-#define BOOST_PYTHON_STATIC_LIB
-#include <boost/python.hpp>
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-using namespace boost::python;
+	void init(const double x, const double y, const double z); // x,y,z : initial joint position
+	void getFilteredState(const double x, const double y, const double z, double result[3]); // x,y,z : measured position, result : filtered position vector
 
-// Current Kinect
-IKinectSensor*          m_pKinectSensor;
+private:
+	Matrix<double, 6, 6> A, Ex, P, I;
+	MatrixXd K;
+	Matrix<double, 6, 1> B, estimateState;
+	Matrix<double, 3, 6> C;
+	Matrix<double, 3, 3> Ez;
 
-Joint					joints[JointType_Count];
+	double dt, sensorNoise, u, uNoise;
 
-// Body reader
-IBodyFrameReader*       m_pBodyFrameReader;
+	void predict(); // no param here, command is supposed to be 0
+	void update(const double x, const double y, const double z); // x,y,z : measured position
 
-// Kalman filters data
-SimpleKalman*			kalman[25];
+};
 
-// store framerate
-double dt;

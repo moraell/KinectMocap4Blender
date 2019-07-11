@@ -140,7 +140,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(PYTHON37)\include;$(BOOST)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PYTHON37)\include;$(BOOST);D:\Logiciels\eigen-3_3_7</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
@@ -153,9 +153,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="kinectMocap.cpp" />
+    <ClCompile Include="SimpleKalman.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="kinectMocap.h" />
+    <ClInclude Include="SimpleKalman.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
