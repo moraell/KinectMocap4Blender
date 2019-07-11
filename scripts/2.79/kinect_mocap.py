@@ -291,7 +291,7 @@ class KmcStartTrackingOperator(bpy.types.Operator):
     
     def modal(self, context, event):
         wm = context.window_manager
-        context.scene.k_sensor.init()
+        context.scene.k_sensor.init(1.0 / context.scene.kmc_props.fps)
         if event.type == 'TIMER':
             if(context.scene.k_sensor.update() == 1):
                 # update pose
