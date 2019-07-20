@@ -171,12 +171,12 @@ def initialize(context):
     bpy.ops.pose.select_all(action=('DESELECT'))
     context.scene.kmc_props.currentFrame = 0
     context.scene.kmc_props.stopTracking = False
-
+    
     for target in context.scene.kmc_props.targetBones:
         if target.value is not None and target.value != "" :
             bone = bpy.data.objects[context.scene.kmc_props.arma_list].pose.bones[target.value]
             bone.rotation_mode = 'QUATERNION'
-
+            
             # Store rest pose angles for column, head and feet bones
             if bonesDefinition[target.name][2] is not None :
                 baseDir =  bonesDefinition[target.name][2] @ bone.matrix
@@ -200,7 +200,7 @@ def updatePose(context, bone):
             # update only tracked bones
             if(head[3] == 2) and (tail[3] == 2) :
                 boneV = Vector((head[X] - tail[X], tail[Y] - head[Y], tail[Z] - head[Z]))
-                
+            
                 # convert rotation in local coordinates
                 boneV = boneV @ bone.matrix
                 

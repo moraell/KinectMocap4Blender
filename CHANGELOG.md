@@ -1,3 +1,7 @@
+Version 1.2:
+- added smoothing with Kalman filter
+- added sensor tilt angle compensation
+
 Version 1.1:
 - added Blender 2.80 version
 - moved python scripts to separate directories in order to allow different versions of Blender

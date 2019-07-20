@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 #include "kinectMocap.h"
+#include <cmath>
 
 // Safe release for interfaces
 template<class Interface>
@@ -35,6 +36,8 @@ inline void SafeRelease(Interface *& pInterfaceToRelease)
 int initSensor(double inDt) {
 	HRESULT hr;
 	int res = 0;
+	tilt = -100;
+	sensorH = -1;
 	dt = inDt;
 
 	hr = GetDefaultKinectSensor(&m_pKinectSensor);
@@ -127,6 +130,18 @@ int updateFrame() {
 	
 	if (SUCCEEDED(hr)) {
 
+		if (tilt == -100) {
+			// initialize tilt angle
+			Vector4 floorPlane;
+
+			if (SUCCEEDED(pBodyFrame->get_FloorClipPlane(&floorPlane))) {
+				tilt = atan2(floorPlane.z, floorPlane.y);
+				sensorH = floorPlane.w;
+				planeX = floorPlane.x;
+				planeY = floorPlane.y;
+				planeZ = floorPlane.z;
+			}
+		}
 		
 		IBody* ppBodies[BODY_COUNT] = { 0 };
 
@@ -148,8 +163,16 @@ int updateFrame() {
 						hr = pBody->GetJoints(_countof(joints), joints);
 						
 						if (SUCCEEDED(hr)) {
-							// apply kalman filter to each joint
 							for (int j = 0; j < 25; j++) {
+								// compensate tilt
+								if (tilt != -100) {
+									double height = joints[j].Position.Y * cos(tilt) + joints[j].Position.Z * sin(tilt);
+									double depth = joints[j].Position.Z * cos(tilt) - joints[j].Position.Y * sin(tilt);
+									joints[j].Position.Y = height;
+									joints[j].Position.Z = depth;
+								}
+
+								// apply kalman filter to each joint
 								applyKalman(j);
 							}
 							res = 1;
@@ -166,12 +189,16 @@ int updateFrame() {
 	return res;
 }
 
+double getTilt() {
+	return tilt*180/3.141592653;
+}
 
 struct Sensor {
 	tuple getJoint(int jointNumber) { return make_tuple(joints[jointNumber].Position.X, joints[jointNumber].Position.Y, joints[jointNumber].Position.Z, static_cast<int>(joints[jointNumber].TrackingState)); }
 	int init(double dt) { return initSensor(dt); }
 	int close() { return closeSensor(); }
 	int update() { return updateFrame(); }
+	double tilt() { return getTilt(); }
 };
 
 BOOST_PYTHON_MODULE(kinectMocap4Blender) {
@@ -180,5 +207,6 @@ BOOST_PYTHON_MODULE(kinectMocap4Blender) {
 		.def("close", &Sensor::close)
 		.def("update", &Sensor::update)
 		.def("getJoint", &Sensor::getJoint)
+		.def("tilt", &Sensor::tilt)
 	;
 }
