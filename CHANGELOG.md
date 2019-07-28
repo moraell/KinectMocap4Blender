@@ -1,3 +1,6 @@
+Version 1.3:
+- added position tracking, and ability to lock position an each axis
+
 Version 1.2:
 - added smoothing with Kalman filter
 - added sensor tilt angle compensation

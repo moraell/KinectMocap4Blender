@@ -31,7 +31,7 @@ using namespace boost::python;
 
 // Current Kinect
 IKinectSensor*          m_pKinectSensor;
-double					tilt, sensorH, planeX, planeY, planeZ;
+double					tilt;
 
 Joint					joints[JointType_Count];
 

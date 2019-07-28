@@ -23,7 +23,7 @@ bl_info = {
     "name": "Kinect Motion Capture plugin",
     "description": "Motion capture using MS Kinect v2",
     "author": "Morgane Dufresne",
-    "version": (1, 2),
+    "version": (1, 3),
     "blender": (2, 80, 0),
     "warning": "You need a MS Kinect v2 sensor (XBox One)",
     "support": "COMMUNITY",
@@ -70,6 +70,11 @@ class KMC_PG_KmcProperties(bpy.types.PropertyGroup):
     record : bpy.props.BoolProperty(name="Record captured motion", description="activate recording while tracking")
     isTracking : bpy.props.BoolProperty(name="Tracking status", description="tracking status")
     stopTracking : bpy.props.BoolProperty(name="Stop trigger", description="tells to stop the tracking")
+    firstFramePosition : bpy.props.FloatVectorProperty(name="firstFramePosition", description="position of root bone in first frame", size=3)
+    initialOffset : bpy.props.FloatVectorProperty(name="initialOffset", description="position of root bone in rest pose", size=3)
+    lockHeight : bpy.props.BoolProperty(name="height", description="ignore vertical movement", default=True)
+    lockwidth : bpy.props.BoolProperty(name="width", description="ignore lateral movement", default=True)
+    lockDepth : bpy.props.BoolProperty(name="depth", description="ignore depth movement", default=True)
 
 jointType = {
     "SpineBase":0,
@@ -171,11 +176,17 @@ def initialize(context):
     bpy.ops.pose.select_all(action=('DESELECT'))
     context.scene.kmc_props.currentFrame = 0
     context.scene.kmc_props.stopTracking = False
+    context.scene.kmc_props.firstFramePosition = (-1,-1,-1)
+    context.scene.kmc_props.initialOffset = (0,0,0)
     
     for target in context.scene.kmc_props.targetBones:
         if target.value is not None and target.value != "" :
             bone = bpy.data.objects[context.scene.kmc_props.arma_list].pose.bones[target.value]
             bone.rotation_mode = 'QUATERNION'
+            
+            # Store initial position of spine0 bone
+            if target.name == "Spine0":
+                context.scene.kmc_props.initialOffset = bpy.data.objects[context.scene.kmc_props.arma_list].pose.bones[target.value].matrix.translation
             
             # Store rest pose angles for column, head and feet bones
             if bonesDefinition[target.name][2] is not None :
@@ -200,7 +211,27 @@ def updatePose(context, bone):
             # update only tracked bones
             if(head[3] == 2) and (tail[3] == 2) :
                 boneV = Vector((head[X] - tail[X], tail[Y] - head[Y], tail[Z] - head[Z]))
-            
+                
+                # if first bone, update position (only for configured axes)
+                if target.name == "Spine0":
+                    # initialize firstFramePosition if fit isn't
+                    if context.scene.kmc_props.firstFramePosition[1] == -1:
+                        context.scene.kmc_props.firstFramePosition = (-1.0*head[X], head[Y], head[Z])
+                        
+                    ffp = context.scene.kmc_props.firstFramePosition
+                    tx = context.scene.kmc_props.initialOffset[0]
+                    ty = context.scene.kmc_props.initialOffset[2]
+                    tz = context.scene.kmc_props.initialOffset[1]
+                    if not context.scene.kmc_props.lockwidth:
+                        tx += -head[X] - ffp[0]
+                    if not context.scene.kmc_props.lockHeight:
+                        ty += head[Z] - ffp[2]
+                    if not context.scene.kmc_props.lockDepth:
+                        tz += head[Y] - ffp[1]
+                        
+                    # translate bone
+                    bone.matrix.translation = (tx, tz, ty)
+                
                 # convert rotation in local coordinates
                 boneV = boneV @ bone.matrix
                 
@@ -262,6 +293,15 @@ class KMC_PT_KinectMocapPanel(bpy.types.Panel):
                         box.prop(target, "value", text=target.name)
                         break
             
+            # configure movement tracking
+            layout.separator()
+            box = layout.box()
+            box.label(text="Lock movement for :")
+            col = box.column_flow(columns=3)
+            col.prop(context.scene.kmc_props, "lockDepth")
+            col.prop(context.scene.kmc_props, "lockHeight")
+            col.prop(context.scene.kmc_props, "lockwidth")
+            
             # activate
             layout.separator()
             layout.operator("kmc.start")
@@ -303,7 +343,6 @@ def captureFrame(context):
     if(context.scene.k_sensor.update() == 1):
         # update pose
         updatePose(context, bpy.data.objects[context.scene.kmc_props.arma_list].pose.bones[0])
-        #context.scene.update()
 
     if context.scene.kmc_props.currentFrame > 0 :
         context.scene.kmc_props.currentFrame += 1
@@ -329,7 +368,7 @@ class KMC_OT_KmcStartTrackingOperator(bpy.types.Operator):
         else:
             # init system
             initialize(context)
-
+        
             context.scene.k_sensor.init(1.0 / context.scene.kmc_props.fps)
             bpy.app.timers.register(functools.partial(captureFrame, context))
             context.scene.kmc_props.isTracking = True

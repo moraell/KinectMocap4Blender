@@ -31,4 +31,4 @@ There are two parts in the project :
 The library was designed to be built using Visual Studio 2017 (only the Release configuration has been properly configured at the moment).
 
 ## Current progress
-The project is currently in version 1.1. 
+The project is currently in version 1.3. 

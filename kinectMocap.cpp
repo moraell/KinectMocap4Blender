@@ -37,7 +37,6 @@ int initSensor(double inDt) {
 	HRESULT hr;
 	int res = 0;
 	tilt = -100;
-	sensorH = -1;
 	dt = inDt;
 
 	hr = GetDefaultKinectSensor(&m_pKinectSensor);
@@ -133,13 +132,9 @@ int updateFrame() {
 		if (tilt == -100) {
 			// initialize tilt angle
 			Vector4 floorPlane;
-
+			tilt = 0;
 			if (SUCCEEDED(pBodyFrame->get_FloorClipPlane(&floorPlane))) {
 				tilt = atan2(floorPlane.z, floorPlane.y);
-				sensorH = floorPlane.w;
-				planeX = floorPlane.x;
-				planeY = floorPlane.y;
-				planeZ = floorPlane.z;
 			}
 		}
 		
@@ -165,12 +160,10 @@ int updateFrame() {
 						if (SUCCEEDED(hr)) {
 							for (int j = 0; j < 25; j++) {
 								// compensate tilt
-								if (tilt != -100) {
-									double height = joints[j].Position.Y * cos(tilt) + joints[j].Position.Z * sin(tilt);
-									double depth = joints[j].Position.Z * cos(tilt) - joints[j].Position.Y * sin(tilt);
-									joints[j].Position.Y = height;
-									joints[j].Position.Z = depth;
-								}
+								double height = joints[j].Position.Y * cos(tilt) + joints[j].Position.Z * sin(tilt);
+								double depth = joints[j].Position.Z * cos(tilt) - joints[j].Position.Y * sin(tilt);
+								joints[j].Position.Y = height;
+								joints[j].Position.Z = depth;
 
 								// apply kalman filter to each joint
 								applyKalman(j);
@@ -189,16 +182,11 @@ int updateFrame() {
 	return res;
 }
 
-double getTilt() {
-	return tilt*180/3.141592653;
-}
-
 struct Sensor {
 	tuple getJoint(int jointNumber) { return make_tuple(joints[jointNumber].Position.X, joints[jointNumber].Position.Y, joints[jointNumber].Position.Z, static_cast<int>(joints[jointNumber].TrackingState)); }
 	int init(double dt) { return initSensor(dt); }
 	int close() { return closeSensor(); }
 	int update() { return updateFrame(); }
-	double tilt() { return getTilt(); }
 };
 
 BOOST_PYTHON_MODULE(kinectMocap4Blender) {
@@ -207,6 +195,5 @@ BOOST_PYTHON_MODULE(kinectMocap4Blender) {
 		.def("close", &Sensor::close)
 		.def("update", &Sensor::update)
 		.def("getJoint", &Sensor::getJoint)
-		.def("tilt", &Sensor::tilt)
 	;
 }
