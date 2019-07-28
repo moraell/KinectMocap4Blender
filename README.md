@@ -11,6 +11,17 @@ It has been developped for Blender 2.79 and 2.80 on Windows 10.
 ### A few words about the project genesis
 A few monthes ago, I browsed the web in order to find a way to setup my own homemade capture studio with a Kinect sensor, for a videogame I'm working on. I am not a 3D artist and a real noob with Blender, so I wanted something to help me with the animation process. I found a few solutions but they were either very expensive (and not working very well anyway, at least the demos I tried) or not fitting my needs (not working on Windows 10 or requiring a specific armature that just wouldn't do with my target model). So I decided to learn Python, dig into Blender documentation (and I think I broke a few shovels in the process ;)), and here is the result.
 
+## How to optimize the capture
+It is best to have a large room with a flat floor, and a good lighting but not toot bright.
+The sensor must be horizontal and it is best to place it around waist height.
+The tilt angle doesn't really matter as long as the device can sense the floor.
+Don't get closer than 1.5 meters to the sensor, especially if you track position.
+The actor's clothing shouldn't be too loose, so that each limb is clearly visible.
+Use Kinect Studio to check that your workspace is optimized :
+  - The floor grid (green and grey tiles) must appear and be stable
+  - The actor's skeleton must not be too shaky
+  - If not, try and modify the lighting or the sensor position and tilt angle.
+
 ## Demo and configuration video
 [https://youtu.be/Zt8gJzSNSbw]
 
@@ -31,4 +42,4 @@ There are two parts in the project :
 The library was designed to be built using Visual Studio 2017 (only the Release configuration has been properly configured at the moment).
 
 ## Current progress
-The project is currently in version 1.2. 
+The project is currently in version 1.3. 
