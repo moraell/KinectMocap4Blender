@@ -248,6 +248,8 @@ def updatePose(context, bone):
                         context.scene.kmc_props.currentFrame += 1
 
                     bone.keyframe_insert(data_path="rotation_quaternion", frame=context.scene.kmc_props.currentFrame)
+                    if target.name == "Spine0":
+                        bone.keyframe_insert(data_path="location", frame=context.scene.kmc_props.currentFrame)
                 
     # update child bones
     for child in bone.children :
