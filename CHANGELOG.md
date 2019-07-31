@@ -1,3 +1,6 @@
+Version 1.4:
+- changed recording method for Blender 2.80. No checkbox to activate recording anymore, use of standard Blender auto keying method instead.
+
 Version 1.3:
 - added position tracking, and ability to lock position an each axis
 
