@@ -23,7 +23,7 @@ bl_info = {
     "name": "Kinect Motion Capture plugin",
     "description": "Motion capture using MS Kinect v2",
     "author": "Morgane Dufresne",
-    "version": (1, 3),
+    "version": (1, 4),
     "blender": (2, 80, 0),
     "warning": "You need a MS Kinect v2 sensor (XBox One)",
     "support": "COMMUNITY",
@@ -66,8 +66,6 @@ class KMC_PG_KmcProperties(bpy.types.PropertyGroup):
     fps : bpy.props.IntProperty(name="fps", description="Tracking frames per second", default=24, min = 1, max = 60)
     arma_list : bpy.props.EnumProperty(items = armature_callback, name="Armature", default=None)
     targetBones : bpy.props.CollectionProperty(type = KMC_PG_KmcTarget)
-    currentFrame : bpy.props.IntProperty(name="currentFrame", description="current recording frame", default=0)
-    record : bpy.props.BoolProperty(name="Record captured motion", description="activate recording while tracking")
     isTracking : bpy.props.BoolProperty(name="Tracking status", description="tracking status")
     stopTracking : bpy.props.BoolProperty(name="Stop trigger", description="tells to stop the tracking")
     firstFramePosition : bpy.props.FloatVectorProperty(name="firstFramePosition", description="position of root bone in first frame", size=3)
@@ -174,7 +172,6 @@ def initialize(context):
     bpy.ops.pose.scale_clear()
     bpy.ops.pose.transforms_clear()
     bpy.ops.pose.select_all(action=('DESELECT'))
-    context.scene.kmc_props.currentFrame = 0
     context.scene.kmc_props.stopTracking = False
     context.scene.kmc_props.firstFramePosition = (-1,-1,-1)
     context.scene.kmc_props.initialOffset = (0,0,0)
@@ -242,14 +239,11 @@ def updatePose(context, bone):
                 # calculate desired rotation
                 rot = Vector((0,1,0)).rotation_difference(boneV)
                 bone.rotation_quaternion = bone.rotation_quaternion @ rot
-                if context.scene.kmc_props.record :
-                    if context.scene.kmc_props.currentFrame == 0:
-                        # first captured frame, initiate recording by setting the current frame to 1
-                        context.scene.kmc_props.currentFrame += 1
-
-                    bone.keyframe_insert(data_path="rotation_quaternion", frame=context.scene.kmc_props.currentFrame)
+                
+                if context.scene.tool_settings.use_keyframe_insert_auto:
+                    bone.keyframe_insert(data_path="rotation_quaternion")
                     if target.name == "Spine0":
-                        bone.keyframe_insert(data_path="location", frame=context.scene.kmc_props.currentFrame)
+                        bone.keyframe_insert(data_path="location")
                 
     # update child bones
     for child in bone.children :
@@ -308,9 +302,6 @@ class KMC_PT_KinectMocapPanel(bpy.types.Panel):
             layout.separator()
             layout.operator("kmc.start")
 
-            # activate record mode
-            layout.prop(context.scene.kmc_props, "record")
-
             box = layout.box()
             box.alignment = 'CENTER'
             if context.scene.kmc_props.isTracking:
@@ -346,9 +337,6 @@ def captureFrame(context):
         # update pose
         updatePose(context, bpy.data.objects[context.scene.kmc_props.arma_list].pose.bones[0])
 
-    if context.scene.kmc_props.currentFrame > 0 :
-        context.scene.kmc_props.currentFrame += 1
-        
     if context.scene.kmc_props.stopTracking:
         context.scene.kmc_props.stopTracking = False
         return None
