@@ -40,6 +40,7 @@ IBodyFrameReader*       m_pBodyFrameReader;
 
 // Kalman filters data
 SimpleKalman*			kalman[25];
+double					sensorNoise, uNoise;
 
 // store framerate
-double dt;
+double					dt;

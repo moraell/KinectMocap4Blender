@@ -33,11 +33,13 @@ inline void SafeRelease(Interface *& pInterfaceToRelease)
 }
 
 // start kinect sensor
-int initSensor(double inDt) {
+int initSensor(double inDt, double inSensorNoise, double inUNoise) {
 	HRESULT hr;
 	int res = 0;
 	tilt = -100;
 	dt = inDt;
+	sensorNoise = inSensorNoise;
+	uNoise = inUNoise;
 
 	hr = GetDefaultKinectSensor(&m_pKinectSensor);
 	if (FAILED(hr)) {
@@ -109,7 +111,7 @@ int applyKalman(int jointNumber) {
 	}
 	else {
 		// init filter
-		kalman[jointNumber] = new SimpleKalman(dt);
+		kalman[jointNumber] = new SimpleKalman(dt, sensorNoise, 0, uNoise);
 		kalman[jointNumber]->init(joints[jointNumber].Position.X, joints[jointNumber].Position.Y, joints[jointNumber].Position.Z);
 	}
 	return 0;
@@ -184,7 +186,7 @@ int updateFrame() {
 
 struct Sensor {
 	tuple getJoint(int jointNumber) { return make_tuple(joints[jointNumber].Position.X, joints[jointNumber].Position.Y, joints[jointNumber].Position.Z, static_cast<int>(joints[jointNumber].TrackingState)); }
-	int init(double dt) { return initSensor(dt); }
+	int init(double dt, double sNoise, double uNois) { return initSensor(dt, sNoise, uNois); }
 	int close() { return closeSensor(); }
 	int update() { return updateFrame(); }
 };

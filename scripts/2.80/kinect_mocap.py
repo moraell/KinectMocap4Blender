@@ -25,7 +25,6 @@ bl_info = {
     "author": "Morgane Dufresne",
     "version": (1, 4),
     "blender": (2, 80, 0),
-    "warning": "You need a MS Kinect v2 sensor (XBox One)",
     "support": "COMMUNITY",
     "category": "Animation"
 }
@@ -58,6 +57,32 @@ def validateTarget(self, context):
             self.value = ""
     return None
 
+KBonesEnum = [("Head", "Head", "Head"),
+    ("Neck", "Neck", "Neck"),
+    ("Spine1", "Spine1", "Spine1"),
+    ("Spine0", "Spine0", "Spine0"),
+    ("LeftShoulder", "LeftShoulder", "LeftShoulder"),
+    ("LeftUpperArm", "LeftUpperArm", "LeftUpperArm"),
+    ("LeftLowerArm", "LeftLowerArm", "LeftLowerArm"),
+    ("LeftHand", "LeftHand", "LeftHand"),
+    ("RightShoulder", "RightShoulder", "RightShoulder"),
+    ("RightUpperArm", "RightUpperArm", "RightUpperArm"),
+    ("RightLowerArm", "RightLowerArm", "RightLowerArm"),
+    ("RightHand", "RightHand", "RightHand"),
+    ("LeftUpperLeg", "LeftUpperLeg", "LeftUpperLeg"),
+    ("LeftLowerLeg", "LeftLowerLeg", "LeftLowerLeg"),
+    ("LeftFoot", "LeftFoot", "LeftFoot"),
+    ("RightUpperLeg", "RightUpperLeg", "RightUpperLeg"),
+    ("RightLowerLeg", "RightLowerLeg", "RightLowerLeg"),
+    ("RightFoot", "RightFoot", "RightFoot")
+]
+
+KalmanStrengthEnum = [("Strong", "Strong", "Strong denoising (ideal for slow movement)"),
+    ("Normal", "Normal", "Normal denoising (good balance between speed and precision)"),
+    ("Low", "Low", "Low denoising (for fast movement, less precise)"),
+    ("VeryLow", "Very low", "Very low denoising (only for very fast movement, almost no noise reduction")
+]
+
 class KMC_PG_KmcTarget(bpy.types.PropertyGroup):
     name : bpy.props.StringProperty(name="KBone")
     value : bpy.props.StringProperty(name="TBone", update=validateTarget)
@@ -73,6 +98,8 @@ class KMC_PG_KmcProperties(bpy.types.PropertyGroup):
     lockHeight : bpy.props.BoolProperty(name="height", description="ignore vertical movement", default=True)
     lockwidth : bpy.props.BoolProperty(name="width", description="ignore lateral movement", default=True)
     lockDepth : bpy.props.BoolProperty(name="depth", description="ignore depth movement", default=True)
+    rootBone : bpy.props.EnumProperty(name="root bone", items=KBonesEnum, default="Spine0", description="Kinect identifier of the bone that is used as root of the skeleton")
+    kalmanStrength : bpy.props.EnumProperty(name="Denoising", items=KalmanStrengthEnum, default="Normal")
 
 jointType = {
     "SpineBase":0,
@@ -181,8 +208,8 @@ def initialize(context):
             bone = bpy.data.objects[context.scene.kmc_props.arma_list].pose.bones[target.value]
             bone.rotation_mode = 'QUATERNION'
             
-            # Store initial position of spine0 bone
-            if target.name == "Spine0":
+            # Store initial position of root bone
+            if target.name == context.scene.kmc_props.rootBone:
                 context.scene.kmc_props.initialOffset = bpy.data.objects[context.scene.kmc_props.arma_list].pose.bones[target.value].matrix.translation
             
             # Store rest pose angles for column, head and feet bones
@@ -210,7 +237,7 @@ def updatePose(context, bone):
                 boneV = Vector((head[X] - tail[X], tail[Y] - head[Y], tail[Z] - head[Z]))
                 
                 # if first bone, update position (only for configured axes)
-                if target.name == "Spine0":
+                if target.name == context.scene.kmc_props.rootBone:
                     # initialize firstFramePosition if fit isn't
                     if context.scene.kmc_props.firstFramePosition[1] == -1:
                         context.scene.kmc_props.firstFramePosition = (-1.0*head[X], head[Y], head[Z])
@@ -242,7 +269,7 @@ def updatePose(context, bone):
                 
                 if context.scene.tool_settings.use_keyframe_insert_auto:
                     bone.keyframe_insert(data_path="rotation_quaternion")
-                    if target.name == "Spine0":
+                    if target.name == context.scene.kmc_props.rootBone:
                         bone.keyframe_insert(data_path="location")
                 
     # update child bones
@@ -288,6 +315,7 @@ class KMC_PT_KinectMocapPanel(bpy.types.Panel):
                     if target.name == strBone :
                         box.prop(target, "value", text=target.name)
                         break
+            layout.prop(context.scene.kmc_props, "rootBone")
             
             # configure movement tracking
             layout.separator()
@@ -297,6 +325,10 @@ class KMC_PT_KinectMocapPanel(bpy.types.Panel):
             col.prop(context.scene.kmc_props, "lockDepth")
             col.prop(context.scene.kmc_props, "lockHeight")
             col.prop(context.scene.kmc_props, "lockwidth")
+            
+            # denoising strength
+            layout.separator()
+            layout.prop(context.scene.kmc_props, "kalmanStrength")
             
             # activate
             layout.separator()
@@ -359,7 +391,16 @@ class KMC_OT_KmcStartTrackingOperator(bpy.types.Operator):
             # init system
             initialize(context)
         
-            context.scene.k_sensor.init(1.0 / context.scene.kmc_props.fps)
+            uNoise = 5.0
+            if context.scene.kmc_props.kalmanStrength == "VeryLow" :
+                uNoise=50.0
+            elif context.scene.kmc_props.kalmanStrength == "Low" :
+                uNoise=20.0
+            elif context.scene.kmc_props.kalmanStrength == "Normal" :
+                uNoise=5.0
+            elif context.scene.kmc_props.kalmanStrength == "Strong" :
+                uNoise=1.0
+            context.scene.k_sensor.init(1.0 / context.scene.kmc_props.fps, 0.0005, uNoise)
             bpy.app.timers.register(functools.partial(captureFrame, context))
             context.scene.kmc_props.isTracking = True
 
