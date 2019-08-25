@@ -2,7 +2,7 @@
 A Kinect motion capture plugin for Blender
 
 ## Presentation
-This Blender add-on allows you to capture live movement for a human-like model in Blender, using a Microsoft Kinect V2 sensor. Although not precise, the result makes a good working base to reproduce real life movement after refining it manually. It is a cheap solution for homemade motion capture.
+This Blender add-on allows you to capture live movement for a human-like model in Blender, using a Microsoft Kinect V2 sensor. It is a cheap solution for homemade motion capture, and quite efficient for a free tool.
 
 The target model must be in a standing rest pose.
 
@@ -22,12 +22,13 @@ Use Kinect Studio to check that your workspace is optimized :
   - The actor's skeleton must not be too shaky
   - If not, try and modify the lighting or the sensor position and tilt angle.
 
-## Demo and configuration video
+## Demo and configuration videos
 [https://youtu.be/Zt8gJzSNSbw]
+[https://youtu.be/cdGMrhrUsIs]
 
 ## Install from release archive
 - Install Kinect for Windows SDK 2.0 if you haven't already
-- Download the release archive and unpack the files (kinecp_mocap.py and kinectMocap4Blender.pyd) corresponding to your version of Blender in Blender addons directory.
+- Download the latest release zip archive from github and unpack the files (kinecp_mocap.py and kinectMocap4Blender.pyd) corresponding to your version of Blender in Blender addons directory.
 Consult Blender documentation for more information on plugin installation. [https://docs.blender.org/]
 
 ## Dependencies
@@ -42,4 +43,4 @@ There are two parts in the project :
 The library was designed to be built using Visual Studio 2017 (only the Release configuration has been properly configured at the moment).
 
 ## Current progress
-The project is currently in version 1.3. 
+The project is currently in version 1.4. 
