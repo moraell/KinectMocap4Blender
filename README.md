@@ -25,6 +25,7 @@ Use Kinect Studio to check that your workspace is optimized :
 ## Demo and configuration videos
 [https://youtu.be/Zt8gJzSNSbw]
 [https://youtu.be/cdGMrhrUsIs]
+[https://youtu.be/sFht6XcLZSo]
 
 ## Install from release archive
 - Install Kinect for Windows SDK 2.0 if you haven't already
