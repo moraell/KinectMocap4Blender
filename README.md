@@ -23,14 +23,17 @@ Use Kinect Studio to check that your workspace is optimized :
   - If not, try and modify the lighting or the sensor position and tilt angle.
 
 ## Demo and configuration videos
-[https://youtu.be/Zt8gJzSNSbw]
-[https://youtu.be/cdGMrhrUsIs]
-[https://youtu.be/sFht6XcLZSo]
+Presentation : [https://youtu.be/Zt8gJzSNSbw]
+
+Short demo clip : [https://youtu.be/cdGMrhrUsIs]
+
+Version 1.4 presentation : [https://youtu.be/sFht6XcLZSo]
+
 
 ## Install from release archive
 - Install Kinect for Windows SDK 2.0 if you haven't already
-- Download the latest release zip archive from github and unpack the files (kinecp_mocap.py and kinectMocap4Blender.pyd) corresponding to your version of Blender in Blender addons directory.
-Consult Blender documentation for more information on plugin installation. [https://docs.blender.org/]
+- Download the latest release zip archive from github ([https://github.com/moraell/KinectMocap4Blender/releases]) and unpack the files (kinecp_mocap.py and kinectMocap4Blender.pyd) corresponding to your version of Blender in Blender addons directory.
+Consult Blender documentation for more information on plugin installation [https://docs.blender.org/].
 
 ## Dependencies
 - Python 3.5.3 (for Blender 2.79 builds), 3.7 for Blender 2.80
@@ -41,6 +44,7 @@ Consult Blender documentation for more information on plugin installation. [http
 There are two parts in the project :
   - kinect_mocap.py : the blender add-on (different for Blender 2.79 and 2.80)
   - kinectMocap4Blender.pyd : a C++ library (linking is different for 2.79 and 2.80 for different python and Boost versions)
+
 The library was designed to be built using Visual Studio 2017 (only the Release configuration has been properly configured at the moment).
 
 ## Current progress
