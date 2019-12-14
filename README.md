@@ -2,7 +2,7 @@
 A Kinect motion capture plugin for Blender
 
 ## Presentation
-This Blender add-on allows you to capture live movement for a human-like model in Blender, using a Microsoft Kinect V2 sensor. It is a cheap solution for homemade motion capture, and quite efficient for a free tool.
+This Blender add-on allows you to capture live movement for a human-like model in Blender, using a Microsoft Kinect V2 sensor (not compatible with Kinect 360). It is a cheap solution for homemade motion capture, and quite efficient for a free tool.
 
 The target model must be in a standing rest pose.
 
