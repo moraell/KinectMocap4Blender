@@ -188,11 +188,11 @@ bonesDefinition = {
     "RightUpperArm":("ShoulderRight", "ElbowRight", None),
     "RightLowerArm":("ElbowRight", "WristRight", None),
     "RightHand":("WristRight", "HandRight", None),
-    "LeftHip":("SpineBase", "HipLeft", Vector((1,0,-0.5))),
+    "LeftHip":("SpineBase", "HipLeft", Vector((1,0,0))),
     "LeftUpperLeg":("HipLeft", "KneeLeft", None),
     "LeftLowerLeg":("KneeLeft", "AnkleLeft", None),
     "LeftFoot":("AnkleLeft", "FootLeft", None),
-    "RightHip":("SpineBase", "HipRight", Vector((-1,0,-0.5))),
+    "RightHip":("SpineBase", "HipRight", Vector((-1,0,0))),
     "RightUpperLeg":("HipRight", "KneeRight", None),
     "RightLowerLeg":("KneeRight", "AnkleRight", None),
     "RightFoot":("AnkleRight", "FootRight", None)
