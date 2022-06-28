@@ -423,9 +423,9 @@ class KMC_OT_KmcStartTrackingOperator(bpy.types.Operator):
 
         return {'FINISHED'}
 
-class KMC_OT_KmcLoadTrackingOperator(bpy.types.Operator, ImportHelper):
+class KMC_OT_KmcLoadOperator(bpy.types.Operator, ImportHelper):
     bl_idname = "kmc.load"
-    bl_label = "Load Kinect Bones"
+    bl_label = "Load Bone Mapping"
     bl_context = 'objectmode'
     filename_ext = ".json"
     filter_glob : bpy.props.StringProperty(
@@ -440,14 +440,14 @@ class KMC_OT_KmcLoadTrackingOperator(bpy.types.Operator, ImportHelper):
             jsonStr = f.read()
             f.close()
             jsonData = None
+
             try:
                 jsonData = json.loads(jsonStr)
             except:
-                pass
+                print("Error loading JSON data")
             if jsonData:
                 print(context.scene.kmc_props.targetBones)
                 for key, val in jsonData.items():
-                    #print(key,val)
                     if key == "rootBone":
                         pass
                     else:
@@ -459,9 +459,9 @@ class KMC_OT_KmcLoadTrackingOperator(bpy.types.Operator, ImportHelper):
 
 
         return {'FINISHED'}
-class KMC_OT_KmcSaveTrackingOperator(bpy.types.Operator, ImportHelper):
+class KMC_OT_KmcSaveOperator(bpy.types.Operator, ImportHelper):
     bl_idname = "kmc.save"
-    bl_label = "Save Kinect Bones"
+    bl_label = "Save Bone Mapping"
     bl_context = 'objectmode'
     filename_ext = ".json"
     filter_glob : bpy.props.StringProperty(
@@ -482,10 +482,12 @@ class KMC_OT_KmcSaveTrackingOperator(bpy.types.Operator, ImportHelper):
                     saveDict[target.name] = target.value
                     break
         saveDict['rootBone'] = context.scene.kmc_props.rootBone
-        print(json.dumps(saveDict))
-        f = open(self.filepath, 'w')
-        f.write(json.dumps(saveDict))
-        f.close()
+        try:
+            f = open(self.filepath, 'w')
+            f.write(json.dumps(saveDict))
+            f.close()
+        except:
+            print("Error writing to path: %s" % (self.filepath))
 
         return {'FINISHED'}
 
@@ -500,8 +502,8 @@ classes = (
     KMC_PT_KinectMocapPanel,
     KMC_OT_KmcInitOperator,
     KMC_OT_KmcStartTrackingOperator,
-    KMC_OT_KmcLoadTrackingOperator,
-    KMC_OT_KmcSaveTrackingOperator
+    KMC_OT_KmcLoadOperator,
+    KMC_OT_KmcSaveOperator
 )
 
 def register():
