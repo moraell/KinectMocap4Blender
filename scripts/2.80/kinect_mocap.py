@@ -450,12 +450,12 @@ class KMC_OT_KmcLoadOperator(bpy.types.Operator, ImportHelper):
             except:
                 print("Error loading JSON data")
             if jsonData:
-                print(context.scene.kmc_props.targetBones)
-                for key, val in jsonData.items():
-                    if key == "rootBone":
-                        context.scene.kmc_props.rootBone = val
-                    else:
+                #print(context.scene.kmc_props.targetBones)
+                if "bones" in jsonData:
+                    for key, val in jsonData["bones"].items():
                         context.scene.kmc_props.targetBones[key].value = val
+                if "rootBone" in jsonData:
+                    context.scene.kmc_props.rootBone = jsonData["rootBone"]
 
         else:
             pass
@@ -479,14 +479,15 @@ class KMC_OT_KmcSaveOperator(bpy.types.Operator, ExportHelper):
         filename, extension = os.path.splitext(self.filepath)
         if extension != ".json":
             self.filepath = filename + ".json"
-        saveDict = {}
+        saveDict = {"bones":{}}
         for strBone in ordererBoneList :
             for target in context.scene.kmc_props.targetBones :
                 if target.name == strBone :
                     #print(target.value, "value", target.name)
-                    saveDict[target.name] = target.value
+                    saveDict['bones'][target.name] = target.value
                     break
         saveDict['rootBone'] = context.scene.kmc_props.rootBone
+        saveDict['version'] = 1.1
         try:
             f = open(self.filepath, 'w')
             f.write(json.dumps(saveDict))
