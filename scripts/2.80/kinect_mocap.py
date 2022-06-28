@@ -23,7 +23,7 @@ bl_info = {
     "name": "Kinect Motion Capture plugin",
     "description": "Motion capture using MS Kinect v2",
     "author": "Morgane Dufresne",
-    "version": (1, 4),
+    "version": (1, 5),
     "blender": (2, 80, 0),
     "support": "COMMUNITY",
     "category": "Animation"
@@ -92,6 +92,7 @@ KalmanStrengthEnum = [("Strong", "Strong", "Strong denoising (ideal for slow mov
 class KMC_PG_KmcTarget(bpy.types.PropertyGroup):
     name : bpy.props.StringProperty(name="KBone")
     value : bpy.props.StringProperty(name="TBone", update=validateTarget)
+    enabled : bpy.props.BoolProperty(name="EBone", default=True)
 
 class KMC_PG_KmcProperties(bpy.types.PropertyGroup):
     fps : bpy.props.IntProperty(name="fps", description="Tracking frames per second", default=24, min = 1, max = 60)
@@ -234,7 +235,7 @@ def updatePose(context, bone):
     sensor = context.scene.k_sensor
 
     for target in context.scene.kmc_props.targetBones:
-        if target.value is not None and target.value == bone.name:
+        if target.enabled == True and target.value is not None and target.value == bone.name:
             # update bone pose
             head = sensor.getJoint(jointType[bonesDefinition[target.name][0]])
             tail = sensor.getJoint(jointType[bonesDefinition[target.name][1]])
@@ -326,7 +327,10 @@ class KMC_PT_KinectMocapPanel(bpy.types.Panel):
             for strBone in ordererBoneList :
                 for target in context.scene.kmc_props.targetBones :
                     if target.name == strBone :
-                        box.prop(target, "value", text=target.name)
+                        propRow = box.row()
+
+                        propRow.prop(target, "enabled", text="")
+                        propRow.prop(target, "value", text=target.name)
                         break
             layout.prop(context.scene.kmc_props, "rootBone")
 
