@@ -23,7 +23,7 @@ bl_info = {
     "name": "Kinect Motion Capture plugin",
     "description": "Motion capture using MS Kinect v2",
     "author": "Morgane Dufresne",
-    "version": (1, 4),
+    "version": (1, 5),
     "blender": (2, 80, 0),
     "support": "COMMUNITY",
     "category": "Animation"
@@ -35,6 +35,10 @@ import kinectMocap4Blender
 import mathutils
 from mathutils import Euler, Vector, Quaternion, Matrix
 from time import sleep
+import json
+import os
+from bpy_extras.io_utils import ImportHelper, ExportHelper
+from bpy.types import Operator
 
 ###############################################
 #                    Properties and misc
@@ -88,6 +92,7 @@ KalmanStrengthEnum = [("Strong", "Strong", "Strong denoising (ideal for slow mov
 class KMC_PG_KmcTarget(bpy.types.PropertyGroup):
     name : bpy.props.StringProperty(name="KBone")
     value : bpy.props.StringProperty(name="TBone", update=validateTarget)
+    enabled : bpy.props.BoolProperty(name="EBone", default=True)
 
 class KMC_PG_KmcProperties(bpy.types.PropertyGroup):
     fps : bpy.props.IntProperty(name="fps", description="Tracking frames per second", default=24, min = 1, max = 60)
@@ -210,16 +215,16 @@ def initialize(context):
     context.scene.kmc_props.stopTracking = False
     context.scene.kmc_props.firstFramePosition = (-1,-1,-1)
     context.scene.kmc_props.initialOffset = (0,0,0)
-    
+
     for target in context.scene.kmc_props.targetBones:
         if target.value is not None and target.value != "" :
             bone = bpy.data.objects[context.scene.kmc_props.arma_list].pose.bones[target.value]
             bone.rotation_mode = 'QUATERNION'
-            
+
             # Store initial position of root bone
             if target.name == context.scene.kmc_props.rootBone:
                 context.scene.kmc_props.initialOffset = bpy.data.objects[context.scene.kmc_props.arma_list].pose.bones[target.value].matrix.translation
-            
+
             # Store rest pose angles for column, head and feet bones
             if bonesDefinition[target.name][2] is not None :
                 baseDir =  bonesDefinition[target.name][2] @ bone.matrix
@@ -228,28 +233,28 @@ def initialize(context):
 
 def updatePose(context, bone):
     sensor = context.scene.k_sensor
-    
+
     for target in context.scene.kmc_props.targetBones:
-        if target.value is not None and target.value == bone.name:
+        if target.enabled == True and target.value is not None and target.value == bone.name:
             # update bone pose
             head = sensor.getJoint(jointType[bonesDefinition[target.name][0]])
             tail = sensor.getJoint(jointType[bonesDefinition[target.name][1]])
-            
+
             # axes matching
             X = 0 # inverted
             Y = 2
             Z = 1
-            
+
             # update only tracked bones
             if(head[3] == 2) and (tail[3] == 2) :
                 boneV = Vector((head[X] - tail[X], tail[Y] - head[Y], tail[Z] - head[Z]))
-                
+
                 # if first bone, update position (only for configured axes)
                 if target.name == context.scene.kmc_props.rootBone:
                     # initialize firstFramePosition if fit isn't
                     if context.scene.kmc_props.firstFramePosition[1] == -1:
                         context.scene.kmc_props.firstFramePosition = (-1.0*head[X], head[Y], head[Z])
-                        
+
                     ffp = context.scene.kmc_props.firstFramePosition
                     tx = context.scene.kmc_props.initialOffset[0]
                     ty = context.scene.kmc_props.initialOffset[2]
@@ -260,26 +265,26 @@ def updatePose(context, bone):
                         ty += head[Z] - ffp[2]
                     if not context.scene.kmc_props.lockDepth:
                         tz += head[Y] - ffp[1]
-                        
+
                     # translate bone
                     bone.matrix.translation = (tx, tz, ty)
-                
+
                 # convert rotation in local coordinates
                 boneV = boneV @ bone.matrix
-                
+
                 # compensate rest pose direction
                 if target.name in restDirection :
                     boneV.rotate(restDirection[target.name])
-                
+
                 # calculate desired rotation
                 rot = Vector((0,1,0)).rotation_difference(boneV)
                 bone.rotation_quaternion = bone.rotation_quaternion @ rot
-                
+
                 if context.scene.tool_settings.use_keyframe_insert_auto:
                     bone.keyframe_insert(data_path="rotation_quaternion")
                     if target.name == context.scene.kmc_props.rootBone:
                         bone.keyframe_insert(data_path="location")
-                
+
     # update child bones
     for child in bone.children :
         updatePose(context, child)
@@ -297,34 +302,42 @@ class KMC_PT_KinectMocapPanel(bpy.types.Panel):
     bl_region_type = 'UI'
     bl_category = "Kinect MoCap"
     bl_context = "posemode"
-    
+
     def draw(self, context):
         layout = self.layout
         obj = context.object
-        
+
         # configure framerate
         layout.prop(context.scene.kmc_props, "fps")
-        
+
         # choose armature
         layout.prop(context.scene.kmc_props, "arma_list")
         layout.separator()
-        
+
         if len(context.scene.kmc_props.targetBones) == 0 :
             # initialization operator
             layout.operator("kmc.init")
-        
+
         else:
             # bones retargeting
             box = layout.box()
             box.alignment = 'LEFT'
             box.label(text="             Bone Targeting")
+            box.operator("kmc.load", icon='IMPORT', text="Load Bones")
             for strBone in ordererBoneList :
                 for target in context.scene.kmc_props.targetBones :
                     if target.name == strBone :
-                        box.prop(target, "value", text=target.name)
+                        propRow = box.row()
+
+                        propRow.prop(target, "enabled", text="")
+                        propRow.prop(target, "value", text=target.name)
                         break
             layout.prop(context.scene.kmc_props, "rootBone")
-            
+
+            # Save
+            layout.separator()
+            layout.operator("kmc.save", icon='EXPORT')
+
             # configure movement tracking
             layout.separator()
             box = layout.box()
@@ -333,11 +346,11 @@ class KMC_PT_KinectMocapPanel(bpy.types.Panel):
             col.prop(context.scene.kmc_props, "lockDepth")
             col.prop(context.scene.kmc_props, "lockHeight")
             col.prop(context.scene.kmc_props, "lockwidth")
-            
+
             # denoising strength
             layout.separator()
             layout.prop(context.scene.kmc_props, "kalmanStrength")
-            
+
             # activate
             layout.separator()
             layout.operator("kmc.start")
@@ -348,7 +361,7 @@ class KMC_PT_KinectMocapPanel(bpy.types.Panel):
                 box.label(text="Status : tracking")
             else:
                 box.label(text="Status : stopped")
-            
+
     def __del__(self):
         pass
 
@@ -361,7 +374,7 @@ class KMC_PT_KinectMocapPanel(bpy.types.Panel):
 class KMC_OT_KmcInitOperator(bpy.types.Operator):
     bl_idname = "kmc.init"
     bl_label = "Initialize tracking system"
-    
+
     def execute(self, context):
         for strBone in defaultTargetBones:
                 newTarget = context.scene.kmc_props.targetBones.add()
@@ -372,7 +385,7 @@ class KMC_OT_KmcInitOperator(bpy.types.Operator):
 # timer function
 def captureFrame(context):
     framerate = 1.0 / context.scene.kmc_props.fps
-    
+
     if(context.scene.k_sensor.update() == 1):
         # update pose
         updatePose(context, bpy.data.objects[context.scene.kmc_props.arma_list].pose.bones[0])
@@ -387,7 +400,7 @@ def captureFrame(context):
 class KMC_OT_KmcStartTrackingOperator(bpy.types.Operator):
     bl_idname = "kmc.start"
     bl_label = "Start / Stop"
-    
+
     def execute(self, context):
 
         if context.scene.kmc_props.isTracking:
@@ -398,7 +411,7 @@ class KMC_OT_KmcStartTrackingOperator(bpy.types.Operator):
         else:
             # init system
             initialize(context)
-        
+
             uNoise = 5.0
             if context.scene.kmc_props.kalmanStrength == "VeryLow" :
                 uNoise=50.0
@@ -414,6 +427,76 @@ class KMC_OT_KmcStartTrackingOperator(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class KMC_OT_KmcLoadOperator(bpy.types.Operator, ImportHelper):
+    bl_idname = "kmc.load"
+    bl_label = "Load Bone Mapping"
+    bl_context = 'objectmode'
+    filename_ext = ".json"
+    filter_glob : bpy.props.StringProperty(
+        default="*.json",
+        options={'HIDDEN'},
+    )
+    filepath : bpy.props.StringProperty(default="",subtype="FILE_PATH")
+
+    def execute(self, context):
+        if os.path.isfile(self.filepath):
+            f = open(self.filepath, 'r')
+            jsonStr = f.read()
+            f.close()
+            jsonData = None
+
+            try:
+                jsonData = json.loads(jsonStr)
+            except:
+                print("Error loading JSON data")
+            if jsonData:
+                #print(context.scene.kmc_props.targetBones)
+                if "bones" in jsonData:
+                    for key, val in jsonData["bones"].items():
+                        context.scene.kmc_props.targetBones[key].value = val
+                if "rootBone" in jsonData:
+                    context.scene.kmc_props.rootBone = jsonData["rootBone"]
+
+        else:
+            pass
+            #logger.info("Image %s not found", os.path.basename(filepath))
+
+
+        return {'FINISHED'}
+
+class KMC_OT_KmcSaveOperator(bpy.types.Operator, ExportHelper):
+    bl_idname = "kmc.save"
+    bl_label = "Save Bone Mapping"
+    bl_context = 'objectmode'
+    filename_ext = ".json"
+    filter_glob : bpy.props.StringProperty(
+        default="*.json",
+        options={'HIDDEN'},
+    )
+    filepath : bpy.props.StringProperty(default="",subtype="FILE_PATH")
+
+    def execute(self, context):
+        filename, extension = os.path.splitext(self.filepath)
+        if extension != ".json":
+            self.filepath = filename + ".json"
+        saveDict = {"bones":{}}
+        for strBone in ordererBoneList :
+            for target in context.scene.kmc_props.targetBones :
+                if target.name == strBone :
+                    #print(target.value, "value", target.name)
+                    saveDict['bones'][target.name] = target.value
+                    break
+        saveDict['rootBone'] = context.scene.kmc_props.rootBone
+        saveDict['version'] = 1.1
+        try:
+            f = open(self.filepath, 'w')
+            f.write(json.dumps(saveDict))
+            f.close()
+        except:
+            print("Error writing to path: %s" % (self.filepath))
+
+        return {'FINISHED'}
+
 
 ###############################################
 #               Registration
@@ -424,7 +507,9 @@ classes = (
     KMC_PG_KmcProperties,
     KMC_PT_KinectMocapPanel,
     KMC_OT_KmcInitOperator,
-    KMC_OT_KmcStartTrackingOperator
+    KMC_OT_KmcStartTrackingOperator,
+    KMC_OT_KmcLoadOperator,
+    KMC_OT_KmcSaveOperator
 )
 
 def register():
