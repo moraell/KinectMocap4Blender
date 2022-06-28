@@ -322,7 +322,7 @@ class KMC_PT_KinectMocapPanel(bpy.types.Panel):
             box = layout.box()
             box.alignment = 'LEFT'
             box.label(text="             Bone Targeting")
-            box.operator("kmc.load", icon='PLUS', text="Load Bones")
+            box.operator("kmc.load", icon='IMPORT', text="Load Bones")
             for strBone in ordererBoneList :
                 for target in context.scene.kmc_props.targetBones :
                     if target.name == strBone :
@@ -332,7 +332,7 @@ class KMC_PT_KinectMocapPanel(bpy.types.Panel):
 
             # Save
             layout.separator()
-            layout.operator("kmc.save")
+            layout.operator("kmc.save", icon='EXPORT')
 
             # configure movement tracking
             layout.separator()
@@ -472,9 +472,6 @@ class KMC_OT_KmcSaveTrackingOperator(bpy.types.Operator, ImportHelper):
 
     def execute(self, context):
         filename, extension = os.path.splitext(self.filepath)
-        print('Selected file:', self.filepath)
-        print('File name:', filename)
-        print('File extension:', extension)
         if extension != ".json":
             self.filepath = filename + ".json"
         saveDict = {}
