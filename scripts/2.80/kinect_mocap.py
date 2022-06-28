@@ -37,7 +37,7 @@ from mathutils import Euler, Vector, Quaternion, Matrix
 from time import sleep
 import json
 import os
-from bpy_extras.io_utils import ImportHelper
+from bpy_extras.io_utils import ImportHelper, ExportHelper
 from bpy.types import Operator
 
 ###############################################
@@ -463,7 +463,8 @@ class KMC_OT_KmcLoadOperator(bpy.types.Operator, ImportHelper):
 
 
         return {'FINISHED'}
-class KMC_OT_KmcSaveOperator(bpy.types.Operator, ImportHelper):
+
+class KMC_OT_KmcSaveOperator(bpy.types.Operator, ExportHelper):
     bl_idname = "kmc.save"
     bl_label = "Save Bone Mapping"
     bl_context = 'objectmode'
