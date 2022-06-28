@@ -449,7 +449,7 @@ class KMC_OT_KmcLoadOperator(bpy.types.Operator, ImportHelper):
                 print(context.scene.kmc_props.targetBones)
                 for key, val in jsonData.items():
                     if key == "rootBone":
-                        pass
+                        context.scene.kmc_props.rootBone = val
                     else:
                         context.scene.kmc_props.targetBones[key].value = val
 
